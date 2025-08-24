@@ -1,0 +1,118 @@
+/* EdgeChain Agricultural Intelligence - CSS Styling */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tailwind-like utility classes for our EdgeChain app */
+.min-h-screen { min-height: 100vh; }
+.bg-gradient-to-br { background: linear-gradient(to bottom right, #f0fdf4, #eff6ff); }
+.p-4 { padding: 1rem; }
+.max-w-6xl { max-width: 72rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.text-center { text-align: center; }
+.mb-8 { margin-bottom: 2rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mr-3 { margin-right: 0.75rem; }
+.mr-2 { margin-right: 0.5rem; }
+
+.text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+.text-2xl { font-size: 1.5rem; line-height: 2rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+
+.text-gray-800 { color: rgb(31 41 55); }
+.text-gray-600 { color: rgb(75 85 99); }
+.text-gray-500 { color: rgb(107 114 128); }
+.text-green-800 { color: rgb(22 101 52); }
+.text-green-600 { color: rgb(34 197 94); }
+.text-blue-800 { color: rgb(30 64 175); }
+.text-blue-600 { color: rgb(37 99 235); }
+.text-purple-800 { color: rgb(107 33 168); }
+.text-purple-600 { color: rgb(147 51 234); }
+.text-indigo-600 { color: rgb(79 70 229); }
+.text-yellow-600 { color: rgb(202 138 4); }
+.text-white { color: rgb(255 255 255); }
+
+.bg-white { background-color: rgb(255 255 255); }
+.bg-green-50 { background-color: rgb(240 253 244); }
+.bg-blue-50 { background-color: rgb(239 246 255); }
+.bg-purple-50 { background-color: rgb(250 245 255); }
+.bg-indigo-50 { background-color: rgb(238 242 255); }
+.bg-yellow-50 { background-color: rgb(254 252 232); }
+.bg-green-600 { background-color: rgb(34 197 94); }
+
+.rounded-lg { border-radius: 0.5rem; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.gap-4 { gap: 1rem; }
+
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.p-4 { padding: 1rem; }
+.p-6 { padding: 1.5rem; }
+
+.h-4 { height: 1rem; }
+.w-4 { width: 1rem; }
+
+.hover\:bg-green-700:hover { background-color: rgb(21 128 61); }
+
+/* Responsive design */
+@media (min-width: 768px) {
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Button styling */
+button {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: none;
+  outline: none;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* EdgeChain specific animations */
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
