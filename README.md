@@ -1,5 +1,10 @@
 # 🌱 EdgeChain: Community-Owned Agricultural Intelligence
+![EdgeChain Banner](docs/images/edgechain_banner.png)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Built with FastAPI](https://img.shields.io/badge/Built%20with-FastAPI-blue.svg)](https://fastapi.tiangolo.com/)
+[![Federated Learning](https://img.shields.io/badge/Powered%20by-Federated%20Learning-orange.svg)]()
+[![Blockchain Ready](https://img.shields.io/badge/Blockchain-Enabled-purple.svg)]()
 ## 🚜 Why EdgeChain?
 
 EdgeChain empowers **farmers as co-creators of technology**.  
