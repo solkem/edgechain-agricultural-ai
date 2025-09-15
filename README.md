@@ -31,7 +31,7 @@ By blending **edge AI, federated learning, privacy-preserving data sharing, and 
 - Crop yield prediction & anomaly detection models  
 
 ### 4. ⛓️ Blockchain Incentive System  
-- Smart contracts (Solidity + Horizen blockchain)  
+- Smart contracts   
 - Incentives: **data quality**, **participation**, **community milestones**, **learning progress**  
 
 ### 5. 🗳️ Community Governance Platform  
