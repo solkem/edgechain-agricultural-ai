@@ -5,6 +5,15 @@
 [![Built with FastAPI](https://img.shields.io/badge/Built%20with-FastAPI-blue.svg)](https://fastapi.tiangolo.com/)
 [![Federated Learning](https://img.shields.io/badge/Powered%20by-Federated%20Learning-orange.svg)]()
 [![Blockchain Ready](https://img.shields.io/badge/Blockchain-Enabled-purple.svg)]()
+
+---
+
+## 🌐 Live Demo
+
+[👉 Try the Mock MVP](https://solkem.github.io/edgechain-agricultural-ai/)
+
+> This is a lightweight prototype to showcase the EdgeChain concept.  
+> Full functionality and integrations are under active development.
 ## 🚜 Why EdgeChain?
 
 EdgeChain empowers **farmers as co-creators of technology**.  
