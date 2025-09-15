@@ -62,7 +62,7 @@ By blending **edge AI, federated learning, privacy-preserving data sharing, and 
 Clone and install:
 
 ```bash
-git clone https://github.com/solke/edgechain-agricultural-ai.git
-cd edgechain
+git clone https://github.com/solkem/edgechain-agricultural-ai.git
+cd edgechain-agricultural-ai
 
 
