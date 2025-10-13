@@ -1,0 +1,16 @@
+pragma language_version >= 0.16 && <=0.17;
+import ComapctStandardLibrary;
+
+//Total number of data submissions from all farmers
+export ledger totalContributions: Counter;
+
+//Total rewards distributed in cents
+export ledger totalRewardDistributed: UInt64;
+
+//Each farmer's earning (key: hash of Farmer ID, value: earnings in cents)
+export ledger farmerEarnings: Map<Bytes<32>, UInt64>;
+
+//Minimum quality score required (0-100)
+export ledger qualityThreshold: UInt8;
+
+
