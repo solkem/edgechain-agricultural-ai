@@ -61,7 +61,7 @@ By blending **edge AI, federated learning, privacy-preserving data sharing, and 
 **Frontend:** React, Lucide-React, Recharts  
 **Edge Devices:** Raspberry Pi 4, Python, LoRa/WiFi mesh  
 **Federated Learning:** TensorFlow Federated, PySyft, Flower  
-**Blockchain:** Solidity, Horizen blockchain, Cardano blockchain, Midnight, IPFS  
+**Blockchain:**  Midnight, IPFS  
 **Deployment:** Docker & Docker Compose  
 
 ---
