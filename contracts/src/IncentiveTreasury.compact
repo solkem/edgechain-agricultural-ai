@@ -1,0 +1,229 @@
+// IncentiveTreasury.compact
+// Smart contract for managing community treasury and distributing incentives
+// Supports multiple reward types and milestone-based incentives
+
+import { Ledger } from '@midnight-ntwrk/compact-runtime';
+
+// Reward types
+enum RewardType {
+  DataQuality,
+  Participation,
+  CommunityMilestone,
+  LearningProgress,
+  GovernanceEngagement
+}
+
+// Milestone struct
+struct Milestone {
+  id: UInt64;
+  targetMetric: UInt64;
+  rewardAmount: UInt64;
+  achieved: Boolean;
+  rewardType: RewardType;
+}
+
+// Withdrawal request (private)
+struct WithdrawalRequest {
+  recipient: Address;
+  amount: UInt64;
+  timestamp: UInt64;
+  processed: Boolean;
+}
+
+// Contract state
+ledger IncentiveTreasuryLedger {
+  // Public treasury state
+  public totalBalance: UInt64;
+  public totalDistributed: UInt64;
+  public totalWithdrawals: UInt64;
+
+  // Reward rates for different types
+  public rewardRates: Map<RewardType, UInt64>;
+
+  // Milestones
+  public milestones: Map<UInt64, Milestone>;
+  public milestoneCount: UInt64;
+
+  // Private balances (ZK-preserved)
+  private farmerBalances: Map<Address, UInt64>;
+
+  // Withdrawal requests
+  private withdrawalRequests: Map<UInt64, WithdrawalRequest>;
+  private withdrawalCount: UInt64;
+
+  // Community pool for collective rewards
+  public communityPoolBalance: UInt64;
+}
+
+// Circuit to deposit funds to treasury
+export circuit deposit(amount: UInt64): Void {
+  assert(amount > 0, "Invalid amount");
+
+  this.ledger.totalBalance = this.ledger.totalBalance + amount;
+}
+
+// Circuit to distribute rewards
+export circuit distributeReward(
+  recipient: Address,
+  amount: UInt64,
+  rewardType: RewardType
+): Void {
+  assert(amount > 0, "Invalid amount");
+  assert(this.ledger.totalBalance >= amount, "Insufficient treasury balance");
+
+  // Get current balance
+  const currentBalance = this.ledger.farmerBalances.get(recipient) || 0;
+
+  // Add reward to farmer's balance (private)
+  this.ledger.farmerBalances.set(recipient, currentBalance + amount);
+
+  // Update treasury totals
+  this.ledger.totalBalance = this.ledger.totalBalance - amount;
+  this.ledger.totalDistributed = this.ledger.totalDistributed + amount;
+}
+
+// Circuit to batch distribute rewards to multiple farmers
+export circuit batchDistribute(
+  witness recipients: Address[],
+  witness amounts: UInt64[],
+  rewardType: RewardType
+): Void {
+  assert(recipients.length == amounts.length, "Array length mismatch");
+
+  let totalAmount: UInt64 = 0;
+  for (let i = 0; i < amounts.length; i++) {
+    totalAmount = totalAmount + amounts[i];
+  }
+
+  assert(this.ledger.totalBalance >= totalAmount, "Insufficient treasury balance");
+
+  // Distribute to each recipient
+  for (let i = 0; i < recipients.length; i++) {
+    const currentBalance = this.ledger.farmerBalances.get(recipients[i]) || 0;
+    this.ledger.farmerBalances.set(recipients[i], currentBalance + amounts[i]);
+  }
+
+  // Update treasury totals
+  this.ledger.totalBalance = this.ledger.totalBalance - totalAmount;
+  this.ledger.totalDistributed = this.ledger.totalDistributed + totalAmount;
+}
+
+// Circuit to create a milestone
+export circuit createMilestone(
+  targetMetric: UInt64,
+  rewardAmount: UInt64,
+  rewardType: RewardType
+): UInt64 {
+  const milestoneId = this.ledger.milestoneCount + 1;
+
+  const newMilestone: Milestone = {
+    id: milestoneId,
+    targetMetric: targetMetric,
+    rewardAmount: rewardAmount,
+    achieved: false,
+    rewardType: rewardType
+  };
+
+  this.ledger.milestones.set(milestoneId, newMilestone);
+  this.ledger.milestoneCount = milestoneId;
+
+  return milestoneId;
+}
+
+// Circuit to achieve a milestone and distribute rewards
+export circuit achieveMilestone(
+  milestoneId: UInt64,
+  currentMetric: UInt64
+): Void {
+  const milestone = this.ledger.milestones.get(milestoneId);
+  assert(milestone.id > 0, "Milestone does not exist");
+  assert(!milestone.achieved, "Milestone already achieved");
+  assert(currentMetric >= milestone.targetMetric, "Target not reached");
+
+  // Mark as achieved
+  milestone.achieved = true;
+  this.ledger.milestones.set(milestoneId, milestone);
+
+  // Add reward to community pool
+  assert(this.ledger.totalBalance >= milestone.rewardAmount, "Insufficient balance");
+  this.ledger.communityPoolBalance = this.ledger.communityPoolBalance + milestone.rewardAmount;
+  this.ledger.totalBalance = this.ledger.totalBalance - milestone.rewardAmount;
+}
+
+// Circuit to request withdrawal (farmer claims their rewards)
+export circuit requestWithdrawal(amount: UInt64, timestamp: UInt64): UInt64 {
+  const balance = this.ledger.farmerBalances.get(msg.sender) || 0;
+  assert(balance >= amount, "Insufficient balance");
+  assert(amount > 0, "Invalid amount");
+
+  // Deduct from farmer's balance
+  this.ledger.farmerBalances.set(msg.sender, balance - amount);
+
+  // Create withdrawal request
+  const requestId = this.ledger.withdrawalCount + 1;
+  const request: WithdrawalRequest = {
+    recipient: msg.sender,
+    amount: amount,
+    timestamp: timestamp,
+    processed: false
+  };
+
+  this.ledger.withdrawalRequests.set(requestId, request);
+  this.ledger.withdrawalCount = requestId;
+  this.ledger.totalWithdrawals = this.ledger.totalWithdrawals + amount;
+
+  return requestId;
+}
+
+// Circuit to get farmer's balance (private, only for the farmer)
+export circuit getMyBalance(): UInt64 {
+  const balance = this.ledger.farmerBalances.get(msg.sender) || 0;
+  return balance;
+}
+
+// Circuit to allocate from community pool
+export circuit allocateFromCommunityPool(
+  witness recipients: Address[],
+  witness amounts: UInt64[]
+): Void {
+  // In production, restrict to governance contract
+  assert(recipients.length == amounts.length, "Array length mismatch");
+
+  let totalAmount: UInt64 = 0;
+  for (let i = 0; i < amounts.length; i++) {
+    totalAmount = totalAmount + amounts[i];
+  }
+
+  assert(this.ledger.communityPoolBalance >= totalAmount, "Insufficient pool balance");
+
+  // Distribute to recipients
+  for (let i = 0; i < recipients.length; i++) {
+    const currentBalance = this.ledger.farmerBalances.get(recipients[i]) || 0;
+    this.ledger.farmerBalances.set(recipients[i], currentBalance + amounts[i]);
+  }
+
+  this.ledger.communityPoolBalance = this.ledger.communityPoolBalance - totalAmount;
+}
+
+// Circuit to set reward rate for a type
+export circuit setRewardRate(rewardType: RewardType, rate: UInt64): Void {
+  // In production, restrict to governance
+  this.ledger.rewardRates.set(rewardType, rate);
+}
+
+// Circuit to initialize treasury
+export circuit initialize(): Void {
+  this.ledger.totalBalance = 0;
+  this.ledger.totalDistributed = 0;
+  this.ledger.totalWithdrawals = 0;
+  this.ledger.milestoneCount = 0;
+  this.ledger.withdrawalCount = 0;
+  this.ledger.communityPoolBalance = 0;
+
+  // Set default reward rates
+  this.ledger.rewardRates.set(RewardType.DataQuality, 10);
+  this.ledger.rewardRates.set(RewardType.Participation, 5);
+  this.ledger.rewardRates.set(RewardType.CommunityMilestone, 100);
+  this.ledger.rewardRates.set(RewardType.LearningProgress, 15);
+  this.ledger.rewardRates.set(RewardType.GovernanceEngagement, 20);
+}

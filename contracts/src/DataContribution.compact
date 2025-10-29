@@ -1,0 +1,89 @@
+// DataContribution.compact
+// Smart contract for managing farmer data contributions and rewards
+// Using zero-knowledge proofs to preserve farmer privacy
+
+import { Ledger } from '@midnight-ntwrk/compact-runtime';
+
+// Contract state stored on the ledger
+ledger DataContributionLedger {
+  // Total contributions counter
+  public totalContributions: UInt64;
+
+  // Total rewards distributed
+  public totalRewardsDistributed: UInt64;
+
+  // Mapping of farmer addresses to their contribution counts (private)
+  private farmerContributions: Map<Address, UInt64>;
+
+  // Mapping of farmer addresses to their earned rewards (private)
+  private farmerRewards: Map<Address, UInt64>;
+
+  // Quality threshold for rewards
+  public qualityThreshold: UInt8;
+}
+
+// Circuit for contributing data
+// Uses ZK proofs to verify contribution without revealing actual data
+export circuit contributeData(
+  witness dataHash: Bytes,          // Hash of the contributed data
+  witness dataQuality: UInt8,       // Quality score (0-100)
+  witness timestamp: UInt64,        // Timestamp of contribution
+): Void {
+  // Verify data quality meets threshold
+  assert(dataQuality >= this.ledger.qualityThreshold, "Data quality below threshold");
+
+  // Calculate reward based on quality
+  const baseReward: UInt64 = 10;
+  const qualityBonus: UInt64 = (dataQuality / 10);
+  const totalReward: UInt64 = baseReward + qualityBonus;
+
+  // Get current farmer's contribution count
+  const currentContributions = this.ledger.farmerContributions.get(msg.sender) || 0;
+  const currentRewards = this.ledger.farmerRewards.get(msg.sender) || 0;
+
+  // Update farmer's stats (kept private via ZK)
+  this.ledger.farmerContributions.set(msg.sender, currentContributions + 1);
+  this.ledger.farmerRewards.set(msg.sender, currentRewards + totalReward);
+
+  // Update global stats (public)
+  this.ledger.totalContributions = this.ledger.totalContributions + 1;
+  this.ledger.totalRewardsDistributed = this.ledger.totalRewardsDistributed + totalReward;
+}
+
+// Circuit for claiming rewards
+export circuit claimRewards(): UInt64 {
+  // Get farmer's accumulated rewards
+  const rewards = this.ledger.farmerRewards.get(msg.sender);
+  assert(rewards > 0, "No rewards to claim");
+
+  // Reset farmer's rewards
+  this.ledger.farmerRewards.set(msg.sender, 0);
+
+  return rewards;
+}
+
+// Circuit to get farmer's contribution count (private, only for the farmer)
+export circuit getMyContributions(): UInt64 {
+  const contributions = this.ledger.farmerContributions.get(msg.sender) || 0;
+  return contributions;
+}
+
+// Circuit to get farmer's pending rewards (private, only for the farmer)
+export circuit getMyRewards(): UInt64 {
+  const rewards = this.ledger.farmerRewards.get(msg.sender) || 0;
+  return rewards;
+}
+
+// Circuit to initialize the contract
+export circuit initialize(initialQualityThreshold: UInt8): Void {
+  this.ledger.totalContributions = 0;
+  this.ledger.totalRewardsDistributed = 0;
+  this.ledger.qualityThreshold = initialQualityThreshold;
+}
+
+// Circuit to update quality threshold (governance action)
+export circuit updateQualityThreshold(newThreshold: UInt8): Void {
+  // In production, this should be restricted to governance contract
+  assert(newThreshold <= 100, "Invalid threshold");
+  this.ledger.qualityThreshold = newThreshold;
+}

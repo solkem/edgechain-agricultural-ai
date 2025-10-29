@@ -66,6 +66,27 @@ By blending **edge AI, federated learning, privacy-preserving data sharing, and 
 
 ---
 
+## 🌙 Midnight Network Integration
+
+EdgeChain is integrated with the **[Midnight blockchain network](https://midnight.network/)**, leveraging its privacy-preserving technology and **Compact programming language** for zero-knowledge smart contracts.
+
+### Smart Contracts (Compact)
+
+- **DataContribution.compact** - Privacy-preserving data contribution tracking and rewards
+- **GovernanceDAO.compact** - Democratic governance with quadratic voting
+- **IncentiveTreasury.compact** - Community treasury and incentive distribution
+
+### Privacy Features
+
+- ✅ **Zero-Knowledge Proofs** - Prove data validity without revealing the data
+- ✅ **Private Balances** - Individual rewards kept confidential
+- ✅ **Public Transparency** - Aggregate statistics visible to all
+- ✅ **Secure Voting** - Vote privately while results remain transparent
+
+📖 **[Read Full Integration Guide →](docs/MIDNIGHT_INTEGRATION.md)**
+
+---
+
 ## 🚀 Quick Start
 
 Clone and install:
@@ -73,5 +94,20 @@ Clone and install:
 ```bash
 git clone https://github.com/solkem/edgechain-agricultural-ai.git
 cd edgechain-agricultural-ai
+
+# Frontend setup
+cd frontend
+npm install
+npm start
+
+# The app will run on http://localhost:3000
+```
+
+### Midnight Wallet Setup
+
+1. Install [Lace Wallet](https://www.lace.io/) or compatible Midnight wallet
+2. Copy `frontend/.env.example` to `frontend/.env.local`
+3. Update contract addresses (after deployment)
+4. Connect wallet in the app to start earning!
 
 

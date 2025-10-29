@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Wallet, Leaf, Users, TrendingUp, Shield, DollarSign, BarChart3, Award } from "lucide-react";
+import midnightWalletService from "./services/midnightWallet";
+import contractInteractionService from "./services/contractInteractions";
 
 const EdgeChainApp = () => {
   const [currentPhase, setCurrentPhase] = useState(1);
@@ -8,10 +10,14 @@ const EdgeChainApp = () => {
     farmSize: "",
     location: "",
     walletConnected: false,
+    walletAddress: "",
     earnings: 0,
     dataContributions: 0,
     learningProgress: 0
   });
+
+  const [walletError, setWalletError] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
  
   const [sensorData, setSensorData] = useState([]);
   const [communityStats, setCommunityStats] = useState({
@@ -47,8 +53,101 @@ const EdgeChainApp = () => {
     return () => clearInterval(interval);
   }, [farmerData.walletConnected]);
 
-  const connectWallet = () => {
-    setFarmerData(prev => ({ ...prev, walletConnected: true }));
+  // Initialize services on component mount
+  useEffect(() => {
+    const initServices = async () => {
+      try {
+        await contractInteractionService.initialize();
+      } catch (error) {
+        console.error("Failed to initialize services:", error);
+      }
+    };
+    initServices();
+  }, []);
+
+  // Connect to Midnight wallet
+  const connectWallet = async () => {
+    setIsConnecting(true);
+    setWalletError(null);
+
+    try {
+      // Check if Midnight wallet is installed
+      if (!midnightWalletService.constructor.isWalletInstalled()) {
+        throw new Error(
+          "Midnight wallet not found. Please install Lace wallet or compatible Midnight wallet extension."
+        );
+      }
+
+      // Connect to wallet
+      const connection = await midnightWalletService.connect();
+
+      if (connection.connected) {
+        setFarmerData(prev => ({
+          ...prev,
+          walletConnected: true,
+          walletAddress: connection.address
+        }));
+
+        // Load farmer's data from blockchain
+        await loadFarmerData();
+      }
+    } catch (error) {
+      console.error("Failed to connect wallet:", error);
+      setWalletError(error.message);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // Disconnect wallet
+  const disconnectWallet = async () => {
+    await midnightWalletService.disconnect();
+    setFarmerData(prev => ({
+      ...prev,
+      walletConnected: false,
+      walletAddress: "",
+      earnings: 0,
+      dataContributions: 0,
+      learningProgress: 0
+    }));
+  };
+
+  // Load farmer data from smart contracts
+  const loadFarmerData = async () => {
+    try {
+      // Get contributions and rewards from DataContribution contract
+      const contributions = await contractInteractionService.getMyContributions();
+      const rewards = await contractInteractionService.getMyRewards();
+      const balance = await contractInteractionService.getMyBalance();
+
+      setFarmerData(prev => ({
+        ...prev,
+        dataContributions: contributions || 0,
+        earnings: (rewards + balance) / 100 || 0, // Convert from smallest unit
+      }));
+    } catch (error) {
+      console.error("Failed to load farmer data:", error);
+    }
+  };
+
+  // Submit data contribution to blockchain
+  const submitDataContribution = async (dataHash, quality) => {
+    try {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const result = await contractInteractionService.contributeData(
+        dataHash,
+        quality,
+        timestamp
+      );
+
+      if (result.success) {
+        console.log("Data contribution submitted:", result.txHash);
+        // Reload farmer data after successful contribution
+        await loadFarmerData();
+      }
+    } catch (error) {
+      console.error("Failed to submit data contribution:", error);
+    }
   };
 
   return (
@@ -76,14 +175,38 @@ const EdgeChainApp = () => {
           </p>
          
           {!farmerData.walletConnected ? (
-            <button
-              onClick={connectWallet}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center"
-            >
-              <Wallet className="mr-2 h-4 w-4" />
-              Connect Privacy Wallet & Start Earning
-            </button>
+            <div>
+              <button
+                onClick={connectWallet}
+                disabled={isConnecting}
+                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                <Wallet className="mr-2 h-4 w-4" />
+                {isConnecting ? "Connecting to Midnight Network..." : "Connect Midnight Wallet & Start Earning"}
+              </button>
+              {walletError && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800 font-semibold">Connection Error</p>
+                  <p className="text-red-600 text-sm mt-1">{walletError}</p>
+                  <p className="text-gray-600 text-xs mt-2">
+                    Make sure you have a Midnight-compatible wallet installed (e.g., Lace wallet).
+                  </p>
+                </div>
+              )}
+            </div>
           ) : (
+            <div>
+              <div className="mb-4 flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  <span className="font-semibold">Connected:</span> {farmerData.walletAddress.slice(0, 8)}...{farmerData.walletAddress.slice(-6)}
+                </div>
+                <button
+                  onClick={disconnectWallet}
+                  className="text-sm text-red-600 hover:text-red-700 underline"
+                >
+                  Disconnect
+                </button>
+              </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-green-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-green-800">💰 Earnings</h3>
@@ -105,6 +228,7 @@ const EdgeChainApp = () => {
                   {farmerData.learningProgress.toFixed(1)}%
                 </p>
               </div>
+            </div>
             </div>
           )}
         </div>
