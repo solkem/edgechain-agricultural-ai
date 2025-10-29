@@ -1,0 +1,190 @@
+// GovernanceDAO.compact
+// Smart contract for community governance with quadratic voting
+// Enables democratic decision-making for EdgeChain farmers
+
+import { Ledger } from '@midnight-ntwrk/compact-runtime';
+
+// Proposal struct
+struct Proposal {
+  id: UInt64;
+  proposer: Address;
+  title: Bytes;
+  description: Bytes;
+  votesFor: UInt64;
+  votesAgainst: UInt64;
+  startTime: UInt64;
+  endTime: UInt64;
+  executed: Boolean;
+  passed: Boolean;
+}
+
+// Vote struct (private)
+struct Vote {
+  voter: Address;
+  proposalId: UInt64;
+  support: Boolean;
+  voteWeight: UInt64;
+}
+
+// Contract state
+ledger GovernanceDAOLedger {
+  // Public state
+  public proposalCount: UInt64;
+  public votingPeriod: UInt64;  // Duration in seconds
+  public quorumPercentage: UInt8;  // Percentage required for quorum
+  public totalMembers: UInt64;
+
+  // Proposals mapping (public)
+  public proposals: Map<UInt64, Proposal>;
+
+  // Private voting records (preserved via ZK)
+  private votes: Map<UInt64, Map<Address, Vote>>;  // proposalId -> voter -> vote
+
+  // Private member voting power (based on contributions)
+  private memberVotingPower: Map<Address, UInt64>;
+
+  // Membership status
+  private members: Map<Address, Boolean>;
+}
+
+// Circuit to create a new proposal
+export circuit createProposal(
+  witness title: Bytes,
+  witness description: Bytes,
+  currentTime: UInt64
+): UInt64 {
+  // Verify proposer is a member
+  assert(this.ledger.members.get(msg.sender) == true, "Not a member");
+
+  // Create new proposal
+  const proposalId = this.ledger.proposalCount + 1;
+  const newProposal: Proposal = {
+    id: proposalId,
+    proposer: msg.sender,
+    title: title,
+    description: description,
+    votesFor: 0,
+    votesAgainst: 0,
+    startTime: currentTime,
+    endTime: currentTime + this.ledger.votingPeriod,
+    executed: false,
+    passed: false
+  };
+
+  // Store proposal
+  this.ledger.proposals.set(proposalId, newProposal);
+  this.ledger.proposalCount = proposalId;
+
+  return proposalId;
+}
+
+// Circuit for quadratic voting
+// Vote weight = sqrt(voting power) for fairness
+export circuit vote(
+  proposalId: UInt64,
+  support: Boolean,  // true = for, false = against
+  currentTime: UInt64
+): Void {
+  // Verify voter is a member
+  assert(this.ledger.members.get(msg.sender) == true, "Not a member");
+
+  // Get proposal
+  const proposal = this.ledger.proposals.get(proposalId);
+  assert(proposal.id > 0, "Proposal does not exist");
+
+  // Check voting is still active
+  assert(currentTime >= proposal.startTime, "Voting not started");
+  assert(currentTime <= proposal.endTime, "Voting ended");
+
+  // Check if already voted
+  const existingVote = this.ledger.votes.get(proposalId)?.get(msg.sender);
+  assert(existingVote == null, "Already voted");
+
+  // Get voter's power and calculate quadratic weight
+  const votingPower = this.ledger.memberVotingPower.get(msg.sender) || 1;
+  const voteWeight = sqrt(votingPower);  // Quadratic voting
+
+  // Record vote (private)
+  const newVote: Vote = {
+    voter: msg.sender,
+    proposalId: proposalId,
+    support: support,
+    voteWeight: voteWeight
+  };
+
+  // Store vote
+  if (!this.ledger.votes.has(proposalId)) {
+    this.ledger.votes.set(proposalId, new Map());
+  }
+  this.ledger.votes.get(proposalId).set(msg.sender, newVote);
+
+  // Update proposal vote counts (public)
+  if (support) {
+    proposal.votesFor = proposal.votesFor + voteWeight;
+  } else {
+    proposal.votesAgainst = proposal.votesAgainst + voteWeight;
+  }
+
+  this.ledger.proposals.set(proposalId, proposal);
+}
+
+// Circuit to execute a proposal
+export circuit executeProposal(proposalId: UInt64, currentTime: UInt64): Void {
+  const proposal = this.ledger.proposals.get(proposalId);
+  assert(proposal.id > 0, "Proposal does not exist");
+  assert(!proposal.executed, "Already executed");
+  assert(currentTime > proposal.endTime, "Voting still active");
+
+  // Calculate if quorum reached
+  const totalVotes = proposal.votesFor + proposal.votesAgainst;
+  const quorumRequired = (this.ledger.totalMembers * this.ledger.quorumPercentage) / 100;
+  assert(totalVotes >= quorumRequired, "Quorum not reached");
+
+  // Check if passed
+  const passed = proposal.votesFor > proposal.votesAgainst;
+
+  // Update proposal
+  proposal.executed = true;
+  proposal.passed = passed;
+  this.ledger.proposals.set(proposalId, proposal);
+}
+
+// Circuit to join as a member
+export circuit joinDAO(): Void {
+  assert(this.ledger.members.get(msg.sender) != true, "Already a member");
+
+  this.ledger.members.set(msg.sender, true);
+  this.ledger.memberVotingPower.set(msg.sender, 1);  // Base voting power
+  this.ledger.totalMembers = this.ledger.totalMembers + 1;
+}
+
+// Circuit to update voting power (called by DataContribution contract)
+export circuit updateVotingPower(member: Address, newPower: UInt64): Void {
+  // In production, restrict to authorized contracts
+  this.ledger.memberVotingPower.set(member, newPower);
+}
+
+// Circuit to initialize DAO
+export circuit initialize(
+  votingPeriodSeconds: UInt64,
+  quorumPerc: UInt8
+): Void {
+  this.ledger.proposalCount = 0;
+  this.ledger.votingPeriod = votingPeriodSeconds;
+  this.ledger.quorumPercentage = quorumPerc;
+  this.ledger.totalMembers = 0;
+}
+
+// Helper function for square root (quadratic voting)
+function sqrt(n: UInt64): UInt64 {
+  if (n == 0) return 0;
+  let x: UInt64 = n;
+  let y: UInt64 = (x + 1) / 2;
+
+  while (y < x) {
+    x = y;
+    y = (x + n / x) / 2;
+  }
+
+  return x;
+}
