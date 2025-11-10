@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@midnight-ntwrk/midnight-js-contracts": "^2.0.2",
-    "@midnight-ntwrk/wallet": "^5.0.0",
+    "@midnight-ntwrk/dapp-connector-api": "^3.0.0",
     "@testing-library/jest-dom": "6.8.0",
     "@testing-library/react": "16.3.0",
     "@testing-library/user-event": "14.6.1",

@@ -103,11 +103,17 @@ npm start
 # The app will run on http://localhost:3000
 ```
 
-### Midnight Wallet Setup
+### Lace Midnight Wallet Setup
 
-1. Install [Lace Wallet](https://www.lace.io/) or compatible Midnight wallet
-2. Copy `frontend/.env.example` to `frontend/.env.local`
-3. Update contract addresses (after deployment)
-4. Connect wallet in the app to start earning!
+**✅ INTEGRATED - Ready to use!**
+
+1. **Install Lace Wallet**: Get the [Lace Midnight Preview](https://www.lace.io/midnight) browser extension
+2. **Create/Import Wallet**: Set up your Midnight wallet and get test tokens
+3. **Configure Environment**: Copy `frontend/.env.example` to `frontend/.env.local`
+4. **Connect & Earn**: Click "Connect Wallet" in the app to start!
+
+📖 **[Complete Setup Guide →](LACE_WALLET_SETUP.md)**
+
+🧪 **Test Wallet Integration**: Open `/test-wallet.html` in your browser after running the app
 
 
