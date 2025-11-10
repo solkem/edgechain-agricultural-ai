@@ -11,6 +11,7 @@ const EdgeChainApp = () => {
     location: "",
     walletConnected: false,
     walletAddress: "",
+    walletBalance: 0,
     earnings: 0,
     dataContributions: 0,
     learningProgress: 0
@@ -18,6 +19,7 @@ const EdgeChainApp = () => {
 
   const [walletError, setWalletError] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [walletInfo, setWalletInfo] = useState(null);
  
   const [sensorData, setSensorData] = useState([]);
   const [communityStats, setCommunityStats] = useState({
@@ -71,10 +73,10 @@ const EdgeChainApp = () => {
     setWalletError(null);
 
     try {
-      // Check if Midnight wallet is installed
+      // Check if Lace Midnight wallet is installed
       if (!midnightWalletService.constructor.isWalletInstalled()) {
         throw new Error(
-          "Midnight wallet not found. Please install Lace wallet or compatible Midnight wallet extension."
+          "Lace Midnight wallet not found. Please install the Lace wallet extension from https://www.lace.io/midnight"
         );
       }
 
@@ -82,11 +84,20 @@ const EdgeChainApp = () => {
       const connection = await midnightWalletService.connect();
 
       if (connection.connected) {
+        // Get detailed wallet info
+        const detailedInfo = midnightWalletService.getDetailedWalletInfo();
+        setWalletInfo(detailedInfo);
+
         setFarmerData(prev => ({
           ...prev,
           walletConnected: true,
-          walletAddress: connection.address
+          walletAddress: connection.address || 'Connected',
+          walletBalance: connection.balance || 0
         }));
+
+        console.log('✅ Wallet connected successfully');
+        console.log('Address:', connection.address);
+        console.log('Balance:', connection.balance, 'tDUST');
 
         // Load farmer's data from blockchain
         await loadFarmerData();
