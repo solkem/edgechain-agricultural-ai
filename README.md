@@ -1,4 +1,4 @@
-# 🌱 EdgeChain: Community-Owned Agricultural Intelligence
+# 🌱 EdgeChain: Privacy-Enhancing Community-Owned Agricultural Intelligence
 ![EdgeChain Banner](https://github.com/solkem/edgechain-agricultural-ai/blob/main/docs/images/EdgeChain.png)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
