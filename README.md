@@ -29,7 +29,7 @@ By blending **edge AI, federated learning, privacy-preserving data sharing, and 
 
 ## 🏗️ Core Architecture
 
-### 1. 🌐 Edge Computing Layer  
+### 1. 🌐 Edge Computing and IoT Layer  
 - Raspberry Pi + soil/temperature/humidity/rainfall sensors  
 - TinyML inference for immediate insights  
 - Offline-first design with sync to community nodes  
